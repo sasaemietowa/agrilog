@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="現場ログ">
+<title>現場ログ</title>
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f5f4f0;--tx:#1a1a18;--tx2:#6b6b67;--tx3:#9c9c98;
+  --bd:rgba(0,0,0,0.12);--bd2:rgba(0,0,0,0.22);--bd3:rgba(0,0,0,0.35);
+  --r:8px;--rl:12px;
+  --font:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Hiragino Kaku Gothic ProN',sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#272724;--tx:#f0ede6;--tx2:#a8a8a2;--tx3:#6b6b67;
+  --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.18);--bd3:rgba(255,255,255,0.3);
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--bg2);min-height:100vh}
+.app{max-width:480px;margin:0 auto;background:var(--bg);min-height:100vh}
+
+/* 設定画面 */
+.setup-screen{padding:2rem 1.5rem;display:flex;flex-direction:column;gap:1rem}
+.setup-screen h2{font-size:18px;font-weight:500;color:var(--tx)}
+.setup-screen p{font-size:13px;color:var(--tx2);line-height:1.6}
+.setup-label{font-size:12px;color:var(--tx2);margin-bottom:6px;display:block}
+.setup-input{width:100%;border:0.5px solid var(--bd2);border-radius:var(--r);padding:11px 12px;font-size:13px;font-family:var(--font);color:var(--tx);background:var(--bg);font-family:monospace}
+.setup-input:focus{outline:none;border-color:var(--bd3)}
+.setup-btn{width:100%;padding:13px;background:var(--tx);color:var(--bg);border:none;border-radius:var(--rl);font-size:15px;font-weight:500;cursor:pointer;margin-top:0.5rem}
+.setup-hint{font-size:11px;color:var(--tx3);background:var(--bg2);border-radius:var(--r);padding:10px 12px;line-height:1.6}
+.setup-hint a{color:var(--tx2)}
+
+/* メイン画面 */
+.header{padding:1rem 1rem 0.5rem;border-bottom:0.5px solid var(--bd);position:sticky;top:0;background:var(--bg);z-index:10}
+.header-top{display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;font-weight:500;color:var(--tx)}
+.header p{font-size:13px;color:var(--tx2);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px}
+.sync-badge{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:999px;border:0.5px solid var(--bd);color:var(--tx3);cursor:pointer}
+.sync-badge.pending{background:#FAEEDA;border-color:#854F0B;color:#633806}
+.sync-badge.syncing{background:#E1F5EE;border-color:#0F6E56;color:#085041}
+.sync-badge.error{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.settings-btn{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:18px;padding:4px}
+.tabs{display:flex;border-bottom:0.5px solid var(--bd);position:sticky;top:62px;background:var(--bg);z-index:10}
+.tab{flex:1;padding:11px;font-size:13px;text-align:center;cursor:pointer;color:var(--tx2);border:none;background:none;border-bottom:2px solid transparent}
+.tab.active{color:var(--tx);font-weight:500;border-bottom:2px solid var(--tx)}
+.section{padding:1rem}
+.field{margin-bottom:1.25rem}
+.label{font-size:12px;color:var(--tx2);margin-bottom:6px;display:block}
+.label-val{font-weight:500;color:var(--tx)}
+.weather-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.weather-btn{padding:10px 4px;border:0.5px solid var(--bd);border-radius:var(--r);background:var(--bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--tx2)}
+.weather-btn.sel{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.weather-icon{font-size:22px;line-height:1}
+.tag-grid{display:flex;flex-wrap:wrap;gap:6px}
+.tag-btn{padding:7px 13px;border:0.5px solid var(--bd);border-radius:999px;font-size:12px;background:var(--bg);cursor:pointer;color:var(--tx2)}
+.tag-btn.sel{background:#E1F5EE;border-color:#0F6E56;color:#085041}
+.tag-btn.sel-amber{background:#FAEEDA;border-color:#854F0B;color:#633806}
+.tag-btn.sel-purple{background:#EEEDFE;border-color:#534AB7;color:#3C3489}
+textarea{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10px 12px;font-size:14px;font-family:var(--font);color:var(--tx);background:var(--bg);resize:none}
+textarea:focus{outline:none;border-color:var(--bd3)}
+input[type=text]{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10px 12px;font-size:14px;font-family:var(--font);color:var(--tx);background:var(--bg)}
+input[type=text]:focus{outline:none;border-color:var(--bd3)}
+select{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10px 12px;font-size:14px;font-family:var(--font);color:var(--tx);background:var(--bg);appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-row input[type=range]{flex:1;height:4px;accent-color:var(--tx)}
+.slider-hint{font-size:11px;color:var(--tx3);min-width:28px;text-align:right}
+.work-detail-wrap{margin-top:8px}
+.work-detail-wrap textarea{border-color:var(--bd2);background:var(--bg2)}
+.save-btn{width:100%;padding:14px;background:var(--tx);color:var(--bg);border:none;border-radius:var(--rl);font-size:15px;font-weight:500;cursor:pointer;margin-top:0.5rem}
+.save-btn:active{opacity:0.7}
+.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.divider{height:0.5px;background:var(--bd);margin:0.25rem 0 1.25rem}
+.ph-bar-wrap{margin-top:6px;position:relative;height:20px}
+.ph-bar{height:8px;border-radius:999px;background:linear-gradient(to right,#e24b4a,#ef9f27,#63c76a,#378add);margin-top:6px}
+.ph-cursor{position:absolute;top:0;width:2px;height:20px;background:var(--tx);border-radius:1px;transform:translateX(-50%);transition:left 0.1s}
+.img-upload-area{border:0.5px dashed var(--bd2);border-radius:var(--rl);padding:18px;text-align:center;cursor:pointer;background:var(--bg2);position:relative}
+.img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.img-upload-label{font-size:13px;color:var(--tx2)}
+.img-upload-sub{font-size:11px;color:var(--tx3);margin-top:4px}
+.img-previews,.weed-imgs-previews{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
+.img-thumb-wrap{position:relative;aspect-ratio:1;border-radius:var(--r);overflow:hidden;border:0.5px solid var(--bd)}
+.img-thumb-wrap img,.weed-thumb-wrap img{width:100%;height:100%;object-fit:cover;cursor:pointer}
+.img-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;line-height:1}
+.weed-manual-row{display:flex;gap:8px;margin-top:8px}
+.weed-manual-row input{flex:1}
+.weed-manual-row button{padding:0 16px;border:0.5px solid var(--bd2);border-radius:var(--r);background:var(--bg);font-size:13px;cursor:pointer;color:var(--tx2);white-space:nowrap;height:44px}
+.weed-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.weed-chip{display:flex;align-items:center;gap:4px;background:#EEEDFE;border:0.5px solid #534AB7;border-radius:999px;padding:5px 10px;font-size:12px;color:#3C3489}
+.weed-chip button{background:none;border:none;cursor:pointer;color:#534AB7;font-size:15px;line-height:1;padding:0}
+.weed-img-upload{margin-top:10px;border:0.5px dashed #AFA9EC;border-radius:var(--rl);padding:14px;text-align:center;cursor:pointer;background:#EEEDFE;position:relative}
+.weed-img-upload input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.weed-thumb-wrap{position:relative;aspect-ratio:1;border-radius:var(--r);overflow:hidden;border:0.5px solid #AFA9EC}
+.weed-thumb-label{position:absolute;bottom:0;left:0;right:0;background:rgba(83,74,183,0.75);color:#fff;font-size:9px;padding:2px 4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.section-sub-label{font-size:11px;color:var(--tx3);margin-bottom:6px;margin-top:10px}
+.log-list{padding:0.75rem 1rem}
+.log-card{background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rl);padding:12px 14px;margin-bottom:10px}
+.log-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.log-date{font-size:12px;color:var(--tx2)}
+.log-place{font-size:12px;font-weight:500;color:var(--tx);background:var(--bg2);padding:2px 8px;border-radius:999px}
+.log-sync-status{font-size:10px;margin-top:3px}
+.log-sync-status.synced{color:#0F6E56}
+.log-sync-status.pending{color:#854F0B}
+.log-sync-status.error{color:#A32D2D}
+.log-work{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.log-work span{font-size:11px;background:#E1F5EE;color:#085041;padding:2px 8px;border-radius:999px}
+.log-note{font-size:13px;color:var(--tx2);line-height:1.5;margin-bottom:4px}
+.log-detail{font-size:12px;color:var(--tx3);line-height:1.5;border-left:2px solid var(--bd2);padding-left:8px;margin-bottom:6px}
+.log-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;font-size:12px;color:var(--tx3)}
+.log-weeds{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.log-weeds span{font-size:11px;background:#EEEDFE;color:#3C3489;padding:2px 8px;border-radius:999px}
+.log-imgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:8px}
+.log-imgs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--r);border:0.5px solid var(--bd);cursor:pointer}
+.log-weed-imgs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}
+.log-weed-img-wrap{position:relative;aspect-ratio:1}
+.log-weed-img-wrap img{width:100%;height:100%;object-fit:cover;border-radius:var(--r);border:0.5px solid #AFA9EC;cursor:pointer}
+.log-weed-img-label{position:absolute;bottom:0;left:0;right:0;background:rgba(83,74,183,0.75);color:#fff;font-size:9px;padding:2px 4px;border-radius:0 0 var(--r) var(--r);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;padding:2rem 1rem;color:var(--tx3);font-size:14px}
+.export-section{padding:0 1rem 2rem;display:flex;flex-direction:column;gap:8px}
+.export-label{font-size:12px;color:var(--tx3);margin-bottom:4px}
+.action-btn{width:100%;padding:12px;border:0.5px solid var(--bd2);border-radius:var(--rl);background:var(--bg);font-size:13px;color:var(--tx2);cursor:pointer}
+.action-btn.primary{background:var(--tx);color:var(--bg);border-color:transparent}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 20px;border-radius:999px;font-size:13px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:100;white-space:nowrap}
+.toast.show{opacity:1}
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:200;align-items:center;justify-content:center}
+.lightbox.show{display:flex}
+.lightbox img{max-width:92%;max-height:82%;border-radius:var(--rl)}
+.lightbox-close{position:fixed;top:16px;right:20px;background:none;border:none;color:#fff;font-size:30px;cursor:pointer;padding:8px}
+.lightbox-caption{position:fixed;bottom:24px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.8);font-size:13px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- 設定画面 -->
+<div id="setup-screen" class="setup-screen" style="display:none">
+  <h2>初期設定</h2>
+  <p>Notionへの自動保存に必要な情報を入力してください。入力内容はこのスマホのみに保存され、外部には送信されません。</p>
+  <div>
+    <label class="setup-label">Notion APIキー（secret_... または ntn_... から始まる）</label>
+    <input type="text" class="setup-input" id="setup-token" placeholder="ntn_xxxxxxxx..." autocomplete="off" autocorrect="off" autocapitalize="off">
+  </div>
+  <div>
+    <label class="setup-label">現場ログDB のID（NotionのURLから）</label>
+    <input type="text" class="setup-input" id="setup-dbid" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" autocorrect="off" autocapitalize="off">
+  </div>
+  <div class="setup-hint">
+    <strong>DBのIDの取得方法：</strong><br>
+    NotionでDBを開く → URLの <code>notion.so/</code> の後ろ32文字（?v=より前）
+  </div>
+  <button class="setup-btn" onclick="saveSettings()">設定を保存してはじめる</button>
+</div>
+
+<!-- メイン画面 -->
+<div id="main-screen" style="display:none">
+<div class="header">
+  <div class="header-top">
+    <h1>現場ログ</h1>
+    <div class="header-right">
+      <div class="sync-badge" id="sync-badge" onclick="syncPending()">
+        <div class="sync-dot"></div>
+        <span id="sync-label">同期済み</span>
+      </div>
+      <button class="settings-btn" onclick="openSettings()" title="設定">⚙</button>
+    </div>
+  </div>
+  <p id="today-date"></p>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('record')">記録する</button>
+  <button class="tab" onclick="switchTab('list')">記録一覧</button>
+</div>
+
+<div id="tab-record">
+<div class="section">
+  <div class="field">
+    <label class="label">場所</label>
+    <select id="place">
+      <option value="">選択してください</option>
+      <option>畑A（南斜面）</option>
+      <option>畑B</option>
+      <option>田んぼ</option>
+      <option>果樹エリア</option>
+      <option>その他</option>
+    </select>
+  </div>
+  <div class="field">
+    <label class="label">天気</label>
+    <div class="weather-grid">
+      <button class="weather-btn" onclick="selWeather(this,'晴れ')"><span class="weather-icon">☀️</span>晴れ</button>
+      <button class="weather-btn" onclick="selWeather(this,'曇り')"><span class="weather-icon">☁️</span>曇り</button>
+      <button class="weather-btn" onclick="selWeather(this,'雨')"><span class="weather-icon">🌧️</span>雨</button>
+      <button class="weather-btn" onclick="selWeather(this,'雪')"><span class="weather-icon">❄️</span>雪</button>
+    </div>
+  </div>
+  <div class="two-col">
+    <div class="field">
+      <label class="label">気温：<span class="label-val" id="temp-label">20</span>℃</label>
+      <div class="slider-row">
+        <span class="slider-hint" style="text-align:left">-5</span>
+        <input type="range" min="-5" max="40" value="20" step="1" id="temp-slider" oninput="document.getElementById('temp-label').textContent=this.value">
+        <span class="slider-hint">40</span>
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">地温：<span class="label-val" id="gtemp-label">15</span>℃</label>
+      <div class="slider-row">
+        <span class="slider-hint" style="text-align:left">0</span>
+        <input type="range" min="0" max="40" value="15" step="1" id="gtemp-slider" oninput="document.getElementById('gtemp-label').textContent=this.value">
+        <span class="slider-hint">40</span>
+      </div>
+    </div>
+  </div>
+  <div class="field">
+    <label class="label">土壌pH：<span class="label-val" id="ph-label">6.5</span>
+      <span id="ph-comment" style="font-size:11px;margin-left:6px;color:var(--tx3)">弱酸性</span>
+    </label>
+    <div class="slider-row">
+      <span class="slider-hint" style="text-align:left">4.0</span>
+      <input type="range" min="4.0" max="8.5" value="6.5" step="0.1" id="ph-slider" oninput="updatePH(this.value)">
+      <span class="slider-hint">8.5</span>
+    </div>
+    <div class="ph-bar-wrap">
+      <div class="ph-bar"></div>
+      <div class="ph-cursor" id="ph-cursor" style="left:55.6%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-top:4px">
+      <span>酸性</span><span>中性</span><span>アルカリ性</span>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="field">
+    <label class="label">作業内容（複数選択可）</label>
+    <div class="tag-grid" id="work-tags">
+      <button class="tag-btn" onclick="toggleTag(this,'work')">播種</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">定植</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">除草</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">収穫</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">土壌改良</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">水やり</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">観察</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">剪定</button>
+      <button class="tag-btn" onclick="toggleTag(this,'work')">施肥</button>
+    </div>
+    <div class="work-detail-wrap">
+      <textarea id="work-detail" rows="3" placeholder="作業の詳細を書く&#10;例）トマトの第3花房まで摘心。脇芽2本を除去。"></textarea>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="field">
+    <label class="label">苗・芽の写真（成長記録）</label>
+    <div class="img-upload-area">
+      <input type="file" accept="image/*" multiple onchange="handleImages(event,'plant')" id="plant-img-input">
+      <div class="img-upload-label">タップして写真を追加</div>
+      <div class="img-upload-sub">複数枚選択可</div>
+    </div>
+    <div class="img-previews" id="plant-img-previews"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="field">
+    <label class="label">雑草ログ</label>
+    <div class="tag-grid" id="weed-tags">
+      <button class="tag-btn" onclick="toggleWeed(this)">スギナ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">ハコベ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">オオバコ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">カヤツリグサ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">ギシギシ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">スベリヒユ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">メヒシバ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">ドクダミ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">タンポポ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">シロツメクサ</button>
+    </div>
+    <div class="weed-manual-row">
+      <input type="text" id="weed-input" placeholder="その他の雑草名を入力…" onkeydown="if(event.key==='Enter')addWeedManual()">
+      <button onclick="addWeedManual()">追加</button>
+    </div>
+    <div class="weed-chips" id="weed-chips"></div>
+    <div class="section-sub-label">雑草の写真</div>
+    <div class="weed-img-upload">
+      <input type="file" accept="image/*" multiple onchange="handleImages(event,'weed')" id="weed-img-input">
+      <div class="img-upload-label" style="color:#534AB7">タップして雑草の写真を追加</div>
+      <div class="img-upload-sub" style="color:#7F77DD">選択中の雑草名が自動付与されます</div>
+    </div>
+    <div class="weed-imgs-previews" id="weed-img-previews"></div>
+  </div>
+  <div class="divider"></div>
+  <div class="field">
+    <label class="label">タグ</label>
+    <div class="tag-grid" id="theme-tags">
+      <button class="tag-btn" onclick="toggleTag(this,'theme')">水管理</button>
+      <button class="tag-btn" onclick="toggleTag(this,'theme')">土壌</button>
+      <button class="tag-btn" onclick="toggleTag(this,'theme')">病害虫</button>
+      <button class="tag-btn" onclick="toggleTag(this,'theme')">共生植物</button>
+      <button class="tag-btn" onclick="toggleTag(this,'theme')">季節観察</button>
+      <button class="tag-btn" onclick="toggleTag(this,'theme')">道具</button>
+    </div>
+  </div>
+  <div class="field">
+    <label class="label">気づき・学び</label>
+    <textarea id="note" rows="3" placeholder="観察したこと、疑問、気づきなど…"></textarea>
+  </div>
+  <div class="field">
+    <label class="label">教わったこと（文字起こし含む）</label>
+    <textarea id="taught" rows="3" placeholder="有識者から聞いた内容など…"></textarea>
+  </div>
+  <div class="field" style="display:flex;align-items:center;gap:8px">
+    <input type="checkbox" id="publish" style="width:18px;height:18px;cursor:pointer">
+    <label for="publish" style="font-size:13px;color:var(--tx2);cursor:pointer">発信候補にする</label>
+  </div>
+  <button class="save-btn" onclick="saveLog()">保存してNotionに送る</button>
+</div>
+</div>
+
+<div id="tab-list" style="display:none">
+  <div id="log-list-inner" class="log-list"></div>
+  <div class="export-section">
+    <div class="export-label">データ管理</div>
+    <button class="action-btn primary" onclick="syncPending()">未送信をNotionに同期する</button>
+    <button class="action-btn" onclick="downloadBackup()">JSONバックアップをダウンロード</button>
+  </div>
+</div>
+</div><!-- /main-screen -->
+
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<script>
+const WEATHER_MAP={'晴れ':'☀️','曇り':'☁️','雨':'🌧️','雪':'❄️'};
+const PH_COMMENTS={4.0:'強酸性',4.5:'強酸性',5.0:'酸性',5.5:'酸性',6.0:'弱酸性',6.5:'弱酸性',7.0:'中性',7.5:'弱アルカリ性',8.0:'アルカリ性',8.5:'アルカリ性'};
+const WEED_PH={'スギナ':'強酸性(4〜5)','ハコベ':'弱酸性〜中性(6〜7)','オオバコ':'酸性〜中性(5〜7)','カヤツリグサ':'酸性(5〜6)','ギシギシ':'酸性(4〜6)','スベリヒユ':'中性〜弱アルカリ(6.5〜7.5)','メヒシバ':'弱酸性(5.5〜6.5)','ドクダミ':'強酸性(4〜5.5)','タンポポ':'弱酸性〜中性(6〜7)','シロツメクサ':'中性〜弱アルカリ(6.5〜7)'};
+let selWeatherVal='',plantImgs=[],weedImgs=[],selectedWeeds=[];
+let logs=JSON.parse(localStorage.getItem('field_logs_v5')||'[]');
+
+function getSettings(){
+  return{
+    token:localStorage.getItem('notion_token')||'',
+    dbId:localStorage.getItem('notion_db_id')||''
+  };
+}
+
+function init(){
+  const s=getSettings();
+  if(!s.token||!s.dbId){
+    document.getElementById('setup-screen').style.display='flex';
+    document.getElementById('setup-screen').style.flexDirection='column';
+    document.getElementById('main-screen').style.display='none';
+  } else {
+    document.getElementById('setup-screen').style.display='none';
+    document.getElementById('main-screen').style.display='block';
+    document.getElementById('today-date').textContent=new Date().toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+    updateSyncBadge();
+  }
+}
+
+function saveSettings(){
+  const token=document.getElementById('setup-token').value.trim();
+  const dbId=document.getElementById('setup-dbid').value.trim().replace(/-/g,'');
+  if(!token||!dbId){showToast('両方入力してください');return;}
+  localStorage.setItem('notion_token',token);
+  localStorage.setItem('notion_db_id',dbId);
+  init();
+}
+
+function openSettings(){
+  const s=getSettings();
+  document.getElementById('setup-token').value=s.token;
+  document.getElementById('setup-dbid').value=s.dbId;
+  document.getElementById('setup-screen').style.display='flex';
+  document.getElementById('setup-screen').style.flexDirection='column';
+  document.getElementById('main-screen').style.display='none';
+}
+
+function updateSyncBadge(){
+  const pending=logs.filter(l=>l.syncStatus==='pending'||l.syncStatus==='error');
+  const badge=document.getElementById('sync-badge');
+  const label=document.getElementById('sync-label');
+  badge.className='sync-badge';
+  if(pending.length===0){label.textContent='同期済み';}
+  else if(pending.some(l=>l.syncStatus==='error')){badge.classList.add('error');label.textContent=`エラー ${pending.length}件`;}
+  else{badge.classList.add('pending');label.textContent=`未送信 ${pending.length}件`;}
+}
+
+async function sendToNotion(log){
+  const s=getSettings();
+  const title=`${log.date.slice(0,10)} ${log.place} ${(log.work||[]).join('・')}`;
+  const body={
+    parent:{database_id:s.dbId},
+    properties:{
+      'タイトル':{title:[{text:{content:title}}]},
+      '日付':{date:{start:log.date.slice(0,10)}},
+      '天気':{select:log.weather?{name:log.weather}:null},
+      '気温（℃）':{number:log.temp},
+      '地温（℃）':{number:log.gtemp},
+      '土壌pH':{number:log.ph},
+      '作業内容':{multi_select:(log.work||[]).map(w=>({name:w}))},
+      '作業詳細':{rich_text:[{text:{content:log.workDetail||''}}]},
+      'タグ':{multi_select:(log.tags||[]).map(t=>({name:t}))},
+      '雑草':{multi_select:(log.weeds||[]).map(w=>({name:w}))},
+      '気づき・学び':{rich_text:[{text:{content:log.note||''}}]},
+      '教わったこと':{rich_text:[{text:{content:log.taught||''}}]},
+      '発信候補':{checkbox:!!log.publish}
+    }
+  };
+  const res=await fetch('https://api.notion.com/v1/pages',{
+    method:'POST',
+    headers:{'Authorization':`Bearer ${s.token}`,'Notion-Version':'2022-06-28','Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  if(!res.ok){const e=await res.json();throw new Error(e.message||'error');}
+  return await res.json();
+}
+
+async function syncPending(){
+  const pending=logs.filter(l=>l.syncStatus==='pending'||l.syncStatus==='error');
+  if(pending.length===0){showToast('未送信のデータはありません');return;}
+  const badge=document.getElementById('sync-badge');
+  badge.className='sync-badge syncing';
+  document.getElementById('sync-label').textContent='送信中…';
+  let ok=0,fail=0;
+  for(const log of pending){
+    try{await sendToNotion(log);log.syncStatus='synced';ok++;}
+    catch(e){log.syncStatus='error';log.syncError=e.message;fail++;}
+  }
+  saveLogs();updateSyncBadge();
+  if(fail===0)showToast(`Notionに${ok}件送信しました`);
+  else showToast(`${ok}件成功・${fail}件失敗`);
+  if(document.getElementById('tab-list').style.display!=='none')renderList();
+}
+
+function updatePH(v){
+  const val=parseFloat(v);
+  document.getElementById('ph-label').textContent=val.toFixed(1);
+  const key=Math.round(val*2)/2;
+  document.getElementById('ph-comment').textContent=PH_COMMENTS[key]||'';
+  document.getElementById('ph-cursor').style.left=((val-4.0)/(8.5-4.0)*100).toFixed(1)+'%';
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['record','list'][i]===t));
+  document.getElementById('tab-record').style.display=t==='record'?'block':'none';
+  document.getElementById('tab-list').style.display=t==='list'?'block':'none';
+  if(t==='list')renderList();
+}
+
+function selWeather(btn,val){
+  document.querySelectorAll('.weather-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');selWeatherVal=val;
+}
+
+function toggleTag(btn,type){
+  if(type==='work')btn.classList.toggle('sel');
+  else btn.classList.toggle('sel-amber');
+}
+
+function toggleWeed(btn){
+  const name=btn.textContent;btn.classList.toggle('sel-purple');
+  if(btn.classList.contains('sel-purple')){if(!selectedWeeds.includes(name))selectedWeeds.push(name);}
+  else selectedWeeds=selectedWeeds.filter(w=>w!==name);
+  renderWeedChips();
+}
+
+function addWeedManual(){
+  const inp=document.getElementById('weed-input'),val=inp.value.trim();
+  if(!val)return;
+  if(!selectedWeeds.includes(val))selectedWeeds.push(val);
+  inp.value='';renderWeedChips();
+}
+
+function removeWeed(name){
+  selectedWeeds=selectedWeeds.filter(w=>w!==name);
+  document.querySelectorAll('#weed-tags .tag-btn').forEach(b=>{if(b.textContent===name)b.classList.remove('sel-purple');});
+  renderWeedChips();
+}
+
+function renderWeedChips(){
+  document.getElementById('weed-chips').innerHTML=selectedWeeds.map(w=>{
+    const hint=WEED_PH[w]?`<span style="font-size:10px;opacity:0.7;margin-left:2px">${WEED_PH[w]}</span>`:'';
+    return `<div class="weed-chip">${w}${hint}<button onclick="removeWeed('${w}')">×</button></div>`;
+  }).join('');
+}
+
+function handleImages(e,type){
+  const files=[...e.target.files];
+  const arr=type==='plant'?plantImgs:weedImgs;
+  const weedName=type==='weed'&&selectedWeeds.length>0?selectedWeeds[selectedWeeds.length-1]:'';
+  files.forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      arr.push({name:file.name,data:ev.target.result,weedName});
+      if(type==='plant')renderPlantPreviews();else renderWeedPreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPlantPreviews(){
+  document.getElementById('plant-img-previews').innerHTML=plantImgs.map((img,i)=>`
+    <div class="img-thumb-wrap"><img src="${img.data}" onclick="openLightbox('${img.data}','苗・芽')">
+    <button class="img-del" onclick="removePlantImg(${i})">×</button></div>`).join('');
+}
+
+function renderWeedPreviews(){
+  document.getElementById('weed-img-previews').innerHTML=weedImgs.map((img,i)=>`
+    <div class="weed-thumb-wrap"><img src="${img.data}" onclick="openLightbox('${img.data}','${img.weedName||'雑草'}')">
+    <div class="weed-thumb-label">${img.weedName||'雑草'}</div>
+    <button class="img-del" onclick="removeWeedImg(${i})">×</button></div>`).join('');
+}
+
+function removePlantImg(i){plantImgs.splice(i,1);renderPlantPreviews();}
+function removeWeedImg(i){weedImgs.splice(i,1);renderWeedPreviews();}
+
+function openLightbox(src,caption){
+  document.getElementById('lightbox-img').src=src;
+  document.getElementById('lightbox-caption').textContent=caption||'';
+  document.getElementById('lightbox').classList.add('show');
+}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('show');}
+
+async function saveLog(){
+  const place=document.getElementById('place').value;
+  if(!place){showToast('場所を選択してください');return;}
+  const log={
+    id:Date.now(),date:new Date().toISOString(),place,weather:selWeatherVal,
+    temp:parseInt(document.getElementById('temp-slider').value),
+    gtemp:parseInt(document.getElementById('gtemp-slider').value),
+    ph:parseFloat(parseFloat(document.getElementById('ph-slider').value).toFixed(1)),
+    work:[...document.querySelectorAll('#work-tags .tag-btn.sel')].map(b=>b.textContent),
+    workDetail:document.getElementById('work-detail').value,
+    tags:[...document.querySelectorAll('#theme-tags .tag-btn.sel-amber')].map(b=>b.textContent),
+    weeds:[...selectedWeeds],
+    plantImages:plantImgs.map(i=>({name:i.name,data:i.data})),
+    weedImages:weedImgs.map(i=>({name:i.name,data:i.data,weedName:i.weedName})),
+    note:document.getElementById('note').value,
+    taught:document.getElementById('taught').value,
+    publish:document.getElementById('publish').checked,
+    syncStatus:'pending'
+  };
+  logs.unshift(log);
+  try{saveLogs();}catch(e){showToast('容量超過。画像枚数を減らしてください');logs.shift();return;}
+  resetForm();
+  showToast('保存しました。Notionに送信中…');
+  try{
+    await sendToNotion(log);
+    log.syncStatus='synced';saveLogs();updateSyncBadge();
+    showToast('Notionに保存しました！');
+  }catch(e){
+    log.syncStatus='error';log.syncError=e.message;
+    saveLogs();updateSyncBadge();
+    showToast('オフライン。電波が戻ったら同期できます');
+  }
+}
+
+function saveLogs(){localStorage.setItem('field_logs_v5',JSON.stringify(logs));}
+
+function resetForm(){
+  document.getElementById('place').value='';
+  document.getElementById('work-detail').value='';
+  document.getElementById('note').value='';
+  document.getElementById('taught').value='';
+  document.getElementById('publish').checked=false;
+  document.getElementById('temp-slider').value=20;document.getElementById('temp-label').textContent='20';
+  document.getElementById('gtemp-slider').value=15;document.getElementById('gtemp-label').textContent='15';
+  document.getElementById('ph-slider').value=6.5;updatePH(6.5);
+  selWeatherVal='';plantImgs=[];weedImgs=[];selectedWeeds=[];
+  document.getElementById('plant-img-previews').innerHTML='';
+  document.getElementById('weed-img-previews').innerHTML='';
+  document.getElementById('weed-chips').innerHTML='';
+  document.getElementById('plant-img-input').value='';
+  document.getElementById('weed-img-input').value='';
+  document.querySelectorAll('.weather-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('sel','sel-amber','sel-purple'));
+}
+
+function renderList(){
+  const el=document.getElementById('log-list-inner');
+  if(!logs.length){el.innerHTML='<div class="empty">記録がまだありません</div>';return;}
+  el.innerHTML=logs.map(l=>{
+    const d=new Date(l.date);
+    const dateStr=d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'});
+    const timeStr=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    const workHtml=(l.work||[]).map(w=>`<span>${w}</span>`).join('');
+    const weedHtml=(l.weeds||[]).map(w=>`<span>${w}</span>`).join('');
+    const plantImgHtml=(l.plantImages||[]).map(img=>`<img src="${img.data}" onclick="openLightbox('${img.data}','苗・芽')">`).join('');
+    const weedImgHtml=(l.weedImages||[]).map(img=>`
+      <div class="log-weed-img-wrap">
+        <img src="${img.data}" onclick="openLightbox('${img.data}','${img.weedName||'雑草'}')">
+        <div class="log-weed-img-label">${img.weedName||'雑草'}</div>
+      </div>`).join('');
+    const syncLabel=l.syncStatus==='synced'?'✓ Notion同期済み':l.syncStatus==='error'?'✗ 送信エラー':'⏳ 未送信';
+    const syncClass=l.syncStatus||'pending';
+    return `<div class="log-card">
+      <div class="log-card-head"><div><div class="log-date">${dateStr} ${timeStr}</div>
+      <div class="log-sync-status ${syncClass}">${syncLabel}</div></div>
+      <div class="log-place">${l.place}</div></div>
+      ${workHtml?`<div class="log-work">${workHtml}</div>`:''}
+      ${l.workDetail?`<div class="log-detail">${l.workDetail}</div>`:''}
+      ${plantImgHtml?`<div class="log-imgs">${plantImgHtml}</div>`:''}
+      ${weedHtml?`<div class="log-weeds">${weedHtml}</div>`:''}
+      ${weedImgHtml?`<div class="log-weed-imgs">${weedImgHtml}</div>`:''}
+      ${l.note?`<div class="log-note">${l.note}</div>`:''}
+      <div class="log-meta">
+        <span>${WEATHER_MAP[l.weather]||''}${l.weather||''} 気温${l.temp}℃</span>
+        <span>地温${l.gtemp}℃</span><span>pH ${l.ph}</span>
+        ${l.publish?'<span style="color:#0F6E56">★ 発信候補</span>':''}
+      </div></div>`;
+  }).join('');
+}
+
+function downloadBackup(){
+  const d=logs.map(l=>({...l,plantImages:(l.plantImages||[]).map(i=>i.name),weedImages:(l.weedImages||[]).map(i=>({name:i.name,weedName:i.weedName}))}));
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download=`field_log_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();URL.revokeObjectURL(url);
+  showToast('バックアップをダウンロードしました');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+window.addEventListener('online',()=>{
+  const pending=logs.filter(l=>l.syncStatus==='pending'||l.syncStatus==='error');
+  if(pending.length>0){showToast('電波が回復しました。Notionに同期します');syncPending();}
+});
+
+init();
+</script>
+</body>
+</html>
