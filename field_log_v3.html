@@ -262,6 +262,10 @@ select{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10
       <button class="tag-btn" onclick="toggleWeed(this)">ドクダミ</button>
       <button class="tag-btn" onclick="toggleWeed(this)">タンポポ</button>
       <button class="tag-btn" onclick="toggleWeed(this)">シロツメクサ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">セイタカアワダチソウ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">ヨモギ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">カラスノエンドウ</button>
+      <button class="tag-btn" onclick="toggleWeed(this)">カラムシ</button>
     </div>
     <div class="weed-manual-row">
       <input type="text" id="weed-input" placeholder="その他の雑草名を入力…" onkeydown="if(event.key==='Enter')addWeedManual()">
@@ -319,7 +323,7 @@ select{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10
 <script>
 const WEATHER_MAP={'晴れ':'☀️','曇り':'☁️','雨':'🌧️','雪':'❄️'};
 const PH_COMMENTS={4.0:'強酸性',4.5:'強酸性',5.0:'酸性',5.5:'酸性',6.0:'弱酸性',6.5:'弱酸性',7.0:'中性',7.5:'弱アルカリ性',8.0:'アルカリ性',8.5:'アルカリ性'};
-const WEED_PH={'スギナ':'強酸性(4〜5)','ハコベ':'弱酸性〜中性(6〜7)','オオバコ':'酸性〜中性(5〜7)','カヤツリグサ':'酸性(5〜6)','ギシギシ':'酸性(4〜6)','スベリヒユ':'中性〜弱アルカリ(6.5〜7.5)','メヒシバ':'弱酸性(5.5〜6.5)','ドクダミ':'強酸性(4〜5.5)','タンポポ':'弱酸性〜中性(6〜7)','シロツメクサ':'中性〜弱アルカリ(6.5〜7)'};
+const WEED_PH={'スギナ':'強酸性(4〜5)','ハコベ':'弱酸性〜中性(6〜7)','オオバコ':'酸性〜中性(5〜7)','カヤツリグサ':'酸性(5〜6)','ギシギシ':'酸性(4〜6)','スベリヒユ':'中性〜弱アルカリ(6.5〜7.5)','メヒシバ':'弱酸性(5.5〜6.5)','ドクダミ':'強酸性(4〜5.5)','タンポポ':'弱酸性〜中性(6〜7)','シロツメクサ':'中性〜弱アルカリ(6.5〜7)','セイタカアワダチソウ':'弱酸性〜中性(5.5〜7)','ヨモギ':'弱酸性〜中性(5.5〜7)','カラスノエンドウ':'弱酸性〜中性(6〜7)','カラムシ':'酸性〜弱酸性(5〜6.5)'};
 let selWeatherVal='',selectedWeeds=[];
 let logs=JSON.parse(localStorage.getItem('field_logs_v5')||'[]');
 
