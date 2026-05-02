@@ -250,16 +250,6 @@ select{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10
   </div>
   <div class="divider"></div>
   <div class="field">
-    <label class="label">苗・芽の写真（成長記録）</label>
-    <div class="img-upload-area">
-      <input type="file" accept="image/*" multiple onchange="handleImages(event,'plant')" id="plant-img-input">
-      <div class="img-upload-label">タップして写真を追加</div>
-      <div class="img-upload-sub">複数枚選択可</div>
-    </div>
-    <div class="img-previews" id="plant-img-previews"></div>
-  </div>
-  <div class="divider"></div>
-  <div class="field">
     <label class="label">雑草ログ</label>
     <div class="tag-grid" id="weed-tags">
       <button class="tag-btn" onclick="toggleWeed(this)">スギナ</button>
@@ -278,13 +268,6 @@ select{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10
       <button onclick="addWeedManual()">追加</button>
     </div>
     <div class="weed-chips" id="weed-chips"></div>
-    <div class="section-sub-label">雑草の写真</div>
-    <div class="weed-img-upload">
-      <input type="file" accept="image/*" multiple onchange="handleImages(event,'weed')" id="weed-img-input">
-      <div class="img-upload-label" style="color:#534AB7">タップして雑草の写真を追加</div>
-      <div class="img-upload-sub" style="color:#7F77DD">選択中の雑草名が自動付与されます</div>
-    </div>
-    <div class="weed-imgs-previews" id="weed-img-previews"></div>
   </div>
   <div class="divider"></div>
   <div class="field">
@@ -337,7 +320,7 @@ select{width:100%;border:0.5px solid var(--bd);border-radius:var(--r);padding:10
 const WEATHER_MAP={'晴れ':'☀️','曇り':'☁️','雨':'🌧️','雪':'❄️'};
 const PH_COMMENTS={4.0:'強酸性',4.5:'強酸性',5.0:'酸性',5.5:'酸性',6.0:'弱酸性',6.5:'弱酸性',7.0:'中性',7.5:'弱アルカリ性',8.0:'アルカリ性',8.5:'アルカリ性'};
 const WEED_PH={'スギナ':'強酸性(4〜5)','ハコベ':'弱酸性〜中性(6〜7)','オオバコ':'酸性〜中性(5〜7)','カヤツリグサ':'酸性(5〜6)','ギシギシ':'酸性(4〜6)','スベリヒユ':'中性〜弱アルカリ(6.5〜7.5)','メヒシバ':'弱酸性(5.5〜6.5)','ドクダミ':'強酸性(4〜5.5)','タンポポ':'弱酸性〜中性(6〜7)','シロツメクサ':'中性〜弱アルカリ(6.5〜7)'};
-let selWeatherVal='',plantImgs=[],weedImgs=[],selectedWeeds=[];
+let selWeatherVal='',selectedWeeds=[];
 let logs=JSON.parse(localStorage.getItem('field_logs_v5')||'[]');
 
 function getSettings(){
@@ -537,8 +520,6 @@ async function saveLog(){
     workDetail:document.getElementById('work-detail').value,
     tags:[...document.querySelectorAll('#theme-tags .tag-btn.sel-amber')].map(b=>b.textContent),
     weeds:[...selectedWeeds],
-    plantImages:plantImgs.map(i=>({name:i.name,data:i.data})),
-    weedImages:weedImgs.map(i=>({name:i.name,data:i.data,weedName:i.weedName})),
     note:document.getElementById('note').value,
     taught:document.getElementById('taught').value,
     publish:document.getElementById('publish').checked,
@@ -570,12 +551,8 @@ function resetForm(){
   document.getElementById('temp-slider').value=20;document.getElementById('temp-label').textContent='20';
   document.getElementById('gtemp-slider').value=15;document.getElementById('gtemp-label').textContent='15';
   document.getElementById('ph-slider').value=6.5;updatePH(6.5);
-  selWeatherVal='';plantImgs=[];weedImgs=[];selectedWeeds=[];
-  document.getElementById('plant-img-previews').innerHTML='';
-  document.getElementById('weed-img-previews').innerHTML='';
+  selWeatherVal='';selectedWeeds=[];
   document.getElementById('weed-chips').innerHTML='';
-  document.getElementById('plant-img-input').value='';
-  document.getElementById('weed-img-input').value='';
   document.querySelectorAll('.weather-btn').forEach(b=>b.classList.remove('sel'));
   document.querySelectorAll('.tag-btn').forEach(b=>b.classList.remove('sel','sel-amber','sel-purple'));
 }
@@ -589,12 +566,6 @@ function renderList(){
     const timeStr=d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
     const workHtml=(l.work||[]).map(w=>`<span>${w}</span>`).join('');
     const weedHtml=(l.weeds||[]).map(w=>`<span>${w}</span>`).join('');
-    const plantImgHtml=(l.plantImages||[]).map(img=>`<img src="${img.data}" onclick="openLightbox('${img.data}','苗・芽')">`).join('');
-    const weedImgHtml=(l.weedImages||[]).map(img=>`
-      <div class="log-weed-img-wrap">
-        <img src="${img.data}" onclick="openLightbox('${img.data}','${img.weedName||'雑草'}')">
-        <div class="log-weed-img-label">${img.weedName||'雑草'}</div>
-      </div>`).join('');
     const syncLabel=l.syncStatus==='synced'?'✓ Notion同期済み':l.syncStatus==='error'?'✗ 送信エラー':'⏳ 未送信';
     const syncClass=l.syncStatus||'pending';
     return `<div class="log-card">
@@ -603,9 +574,7 @@ function renderList(){
       <div class="log-place">${l.place}</div></div>
       ${workHtml?`<div class="log-work">${workHtml}</div>`:''}
       ${l.workDetail?`<div class="log-detail">${l.workDetail}</div>`:''}
-      ${plantImgHtml?`<div class="log-imgs">${plantImgHtml}</div>`:''}
       ${weedHtml?`<div class="log-weeds">${weedHtml}</div>`:''}
-      ${weedImgHtml?`<div class="log-weed-imgs">${weedImgHtml}</div>`:''}
       ${l.note?`<div class="log-note">${l.note}</div>`:''}
       <div class="log-meta">
         <span>${WEATHER_MAP[l.weather]||''}${l.weather||''} 気温${l.temp}℃</span>
